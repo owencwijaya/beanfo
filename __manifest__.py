@@ -6,7 +6,7 @@
     'author': "Owen Christian Wijaya",
     'category': 'Uncategorized',
     'version': '1.0',
-    'depends': ['base'],
+    'depends': ['base','mass_mailing'],
     'data': [
         'security/ir.model.access.csv',
         'views/beanfo_forms.xml',
