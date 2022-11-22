@@ -29,9 +29,28 @@
         <sheet>
           <group>
             <field name="nama_promo"/>
+            <field name="kode_promo"/>
             <field name="tanggal_mulai"/>
             <field name="tanggal_selesai"/>
             <field name="kuota"/>
+            <field name="deskripsi"/>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  
+  <record model="ir.ui.view" id="beanfo_personal_promo_form">
+    <field name="name">beanfo.personal_promo.form</field>
+    <field name="model">beanfo.personal_promo</field>
+    <field name="priority" eval="1"/>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="nama_promo"/>
+            <field name="kode_promo"/>
+            <field name="nama_pelanggan"/>
             <field name="deskripsi"/>
           </group>
         </sheet>
@@ -50,8 +69,8 @@
             <field name="nama_pelanggan"/>
             <field name="tanggal"/>
             <field name="total"/>
-            <field name="poin"/>
             <field name="id_promo_umum"/>
+            <field name="id_promo_khusus" domain = "[('nama_pelanggan', '=', nama_pelanggan)]"/>
           </group>
         </sheet>
       </form>
