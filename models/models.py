@@ -1,10 +1,12 @@
 import datetime
+from math import floor
 from odoo import models, fields, api
 
 
 class Customer(models.Model):
     _name = 'beanfo.customer'
     _description = 'Information about customer'
+    _rec_name = 'nama'
 
     nama = fields.Char(
         string = 'Nama',
@@ -49,6 +51,7 @@ class Customer(models.Model):
 class Promotion(models.Model):
     _name = 'beanfo.promotion'
     _description = 'Information about promotion'
+    _rec_name = 'nama_promo'
 
     nama_promo = fields.Char(
         string = 'Nama Promo',
@@ -105,3 +108,33 @@ class Transaction(models.Model):
         string = 'Kode Promo Umum',
         default = ''
     )
+
+    @api.model
+    def create(self,vals):
+        #Get Promotion
+        self.env.cr.execute("SELECT * FROM beanfo_promotion WHERE id = %s",(vals['id_promo_umum'],))
+        promo = self.env.cr.fetchone()
+        #check if promo is valid
+        if(promo):
+            #check validity date
+            print(type(promo[2]))
+            print(type(vals['tanggal']))
+            if(promo[2] > datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
+                #promo havent started yet
+                raise Warning("Promo belum dimulai")
+            elif(promo[3] < datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
+                #promo already ended
+                raise Warning("Promo sudah berakhir")
+            elif(promo[4] <= 0):
+                #promo already used
+                raise Warning("Promo sudah habis")
+            else:
+                #promo is valid
+                #update promo kuota
+                self.env.cr.execute("UPDATE beanfo_promotion SET kuota = %s WHERE nama_promo = %s",(promo[4]-1,promo[1]))
+                #update customer point
+                vals['poin'] = floor(vals['total']/1000)
+                self.env.cr.execute("UPDATE beanfo_customer SET jumlah_point = jumlah_point + %s WHERE id = %s",(vals['poin'],vals['nama_pelanggan']))
+                #save transaction
+                return super(Transaction, self).create(vals)
+                
