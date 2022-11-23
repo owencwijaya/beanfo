@@ -110,12 +110,12 @@ class PersonalPromo(models.Model):
     )
 
     terpakai_sebelumnya = fields.Boolean(
-        string = 'Apakah promo ini sudah pernah dipakai sebelumnya?',
+        string = 'Sudah pernah dipakai?',
         default = False
     )
 
     jumlah_point = fields.Integer(
-        string = 'Jumlah point yang diperlukan untuk mendapatkan promo ini',
+        string = 'Jumlah point penggunaan',
         default = 0
     )
     
@@ -162,66 +162,77 @@ class Transaction(models.Model):
     @api.model
     def create(self,vals):
         #Get Promotion 
+        self.env.cr.execute("SELECT * FROM beanfo_customer WHERE id = %s",(vals['nama_pelanggan'],))
+        customer = self.env.cr.fetchone()
+        customer_points = customer[4]
 
-        if (type(vals['id_promo_umum']) is int):
+        if (type(vals['id_promo_umum']) is not bool):
             self.env.cr.execute("SELECT * FROM beanfo_promotion WHERE id = %s",(vals['id_promo_umum'],))
             promo = self.env.cr.fetchone()
+
             #check if promo is valid
             if (promo):
                 #check validity date
-                print(type(promo[2]))
-                print(type(vals['tanggal']))
+ 
                 # tanggal mulai
-                if(promo[2] > datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
+                if(promo[3] > datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
                     #promo havent started yet
                     raise Warning("Promo belum dimulai")
                 # tanggal selesai
-                elif(promo[3] < datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
+                elif(promo[4] < datetime.datetime.strptime(vals['tanggal'],'%Y-%m-%d').date()):
                     #promo already ended
                     raise Warning("Promo sudah berakhir")
                 # stok habis
-                elif(promo[4] <= 0):
+                elif(promo[5] <= 0):
                     #promo already used
                     raise Warning("Promo sudah habis")
                 else:
                     #promo is valid
                     #update promo kuota
-                    self.env.cr.execute("UPDATE beanfo_promotion SET kuota = %s WHERE nama_promo = %s",(promo[4]-1,promo[1]))
+                    self.env.cr.execute("UPDATE beanfo_promotion SET kuota = %s WHERE nama_promo = %s",(promo[5]-1,promo[1]))
                   
 
-        if (type(vals['id_promo_khusus']) is int):
-            self.env.cr.execute("SELECT * FROM beanfo_personal_promo WHERE id = %s AND nama_pelanggan LIKE %s",(vals['id_promo_khusus'], vals['nama_pelanggan']))
+        if (type(vals['id_promo_khusus']) is not bool):
+            self.env.cr.execute("SELECT * FROM beanfo_personal_promo WHERE id = %s",(vals['id_promo_khusus'],))
             personal_promo = self.env.cr.fetchone()
 
-            self.env.cr.execute("SELECT * FROM beanfo_customer WHERE id = %s",(vals['nama_pelanggan'],))
-            customer = self.env.cr.fetchone()
 
             print(personal_promo)
-
-            if (personal_promo and personal_promo[5] <= customer[4]):
+    
+            if (personal_promo != False and personal_promo[6] <= customer[4]):
                 self.env.cr.execute("UPDATE beanfo_personal_promo SET terpakai_sebelumnya = True WHERE id = %s",(vals['id_promo_khusus'],))
-                self.env.cr.execute("UPDATE beanfo_customer SET poin = poin - %s WHERE id = %s",(personal_promo[5], vals['nama_pelanggan']))
+                self.env.cr.execute("UPDATE beanfo_customer SET jumlah_point = jumlah_point - %s WHERE id = %s",(personal_promo[6], vals['nama_pelanggan']))
         
 
         #update customer point
         vals['poin'] = floor(vals['total']/1000)
 
-        earned_points = vals['poin']
+        earned_points = vals['poin'] + customer_points
 
         new_promos = ""
-        if (earned_points >= 300):
-            new_promos = "INSERT INTO beanfo_personal_promo (nama_pelanggan, nama_promo, kode_promo, deskripsi, jumlah_point) VALUES ";
-            new_promos += f'(\'{vals["nama_pelanggan"]}\', \'Diskon 30%\', \'PROMO30-{vals["nama_pelanggan"]}\', \'Diskon 30% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 300)'
 
-        if (earned_points >= 400):
-            new_promos += f', (\'{vals["nama_pelanggan"]}\', \'Diskon 40%\', \'PROMO40-{vals["nama_pelanggan"]}\', \'Diskon 40% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 400)'
+        self.env.cr.execute(f'SELECT * FROM beanfo_personal_promo WHERE kode_promo = \'PROMO30-{vals["nama_pelanggan"]}\'AND (terpakai_sebelumnya = False)');
+        promo30 = self.env.cr.fetchone()
 
-        if (earned_points >= 500):
-            new_promos += f', (\'{vals["nama_pelanggan"]}\', \'Diskon 50%\', \'PROMO50-{vals["nama_pelanggan"]}\', \'Diskon 50% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 500)'
+        if (earned_points >= 300 and not promo30):
+            new_promos = "INSERT INTO beanfo_personal_promo (nama_pelanggan, nama_promo, kode_promo, deskripsi, jumlah_point, terpakai_sebelumnya) VALUES ";
+            new_promos += f'(\'{vals["nama_pelanggan"]}\', \'Diskon 30%\', \'PROMO30-{vals["nama_pelanggan"]}\', \'Diskon 30% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 300, False)'
+        
+        self.env.cr.execute(f'SELECT * FROM beanfo_personal_promo WHERE kode_promo = \'PROMO40-{vals["nama_pelanggan"]}\' and terpakai_sebelumnya = False');
+        promo40 = self.env.cr.fetchone()
 
-        new_promos += ';'
+        if (earned_points >= 400 and not promo40):
+            new_promos += f', (\'{vals["nama_pelanggan"]}\', \'Diskon 40%\', \'PROMO40-{vals["nama_pelanggan"]}\', \'Diskon 40% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 400, False)'
+
+        self.env.cr.execute(f'SELECT * FROM beanfo_personal_promo WHERE kode_promo = \'PROMO50-{vals["nama_pelanggan"]}\' and terpakai_sebelumnya = False');
+        promo50 = self.env.cr.fetchone()
+        if (earned_points >= 500 and not promo50):
+            new_promos += f', (\'{vals["nama_pelanggan"]}\', \'Diskon 50%\', \'PROMO50-{vals["nama_pelanggan"]}\', \'Diskon 50% untuk pembelian selanjutnya (khusus pelanggan {vals["nama_pelanggan"]})\', 500, False)'
+
+
 
         if new_promos != "":
+            new_promos += ';'
             self.env.cr.execute(new_promos)
 
         self.env.cr.execute("UPDATE beanfo_customer SET jumlah_point = jumlah_point + %s WHERE id = %s",(vals['poin'],vals['nama_pelanggan']))

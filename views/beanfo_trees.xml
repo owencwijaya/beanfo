@@ -23,6 +23,7 @@
     <field name="arch" type="xml">
       <tree>
         <field name="nama_promo"/>
+        <field name="kode_promo"/>
         <field name="tanggal_mulai"/>
         <field name="tanggal_selesai"/>
         <field name="kuota"/>
@@ -37,10 +38,11 @@
     <field name="priority" eval="1"/>
     <field name="arch" type="xml">
       <tree>
-        <field name="nama_pelanggan"/>
         <field name="nama_promo"/>
         <field name="kode_promo"/>
+        <field name="nama_pelanggan"/>
         <field name="terpakai_sebelumnya"/>
+        <field name="jumlah_point"/>
         <field name="deskripsi"/>
       </tree>
     </field>
@@ -57,6 +59,7 @@
         <field name="total"/>
         <field name="poin"/>
         <field name="id_promo_umum"/>
+        <field name="id_promo_khusus"/>
       </tree>
     </field>
   </record>  

@@ -52,6 +52,7 @@
             <field name="kode_promo"/>
             <field name="nama_pelanggan"/>
             <field name="deskripsi"/>
+            <field name="jumlah_point"/>
           </group>
         </sheet>
       </form>
@@ -70,7 +71,7 @@
             <field name="tanggal"/>
             <field name="total"/>
             <field name="id_promo_umum"/>
-            <field name="id_promo_khusus" domain = "[('nama_pelanggan', '=', nama_pelanggan), ("terpakai_sebelumnya", "=", False)]"/>
+            <field name="id_promo_khusus" domain = "[('nama_pelanggan', '=', nama_pelanggan), ('terpakai_sebelumnya', '=', False)]"/>
           </group>
         </sheet>
       </form>
