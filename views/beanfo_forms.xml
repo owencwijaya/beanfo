@@ -70,7 +70,7 @@
             <field name="tanggal"/>
             <field name="total"/>
             <field name="id_promo_umum"/>
-            <field name="id_promo_khusus" domain = "[('nama_pelanggan', '=', nama_pelanggan)]"/>
+            <field name="id_promo_khusus" domain = "[('nama_pelanggan', '=', nama_pelanggan), ("terpakai_sebelumnya", "=", False)]"/>
           </group>
         </sheet>
       </form>
