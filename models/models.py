@@ -37,13 +37,20 @@ class Customer(models.Model):
     def create(self,vals):
         #Todo code
         #query to mailing_contact insert name and email
+        self.env.cr.execute("SELECT id FROM mailing_list WHERE name = 'beanfo'");
+        try:
+            mailing_list_id = self.env.cr.fetchone()[0]
+        except:
+            self.env.cr.execute("INSERT INTO mailing_list (name,active,is_public) VALUES ('beanfo',true,true)");
+            self.env.cr.execute("SELECT id FROM mailing_list WHERE name = 'beanfo'");
+            mailing_list_id = self.env.cr.fetchone()[0]
         self.env.cr.execute("INSERT INTO mailing_contact (name,email,email_normalized) VALUES (%s,%s,%s)",(vals['nama'],vals['email'],vals['email']))
         self.env.cr.execute("SELECT id FROM mailing_contact WHERE name = %s AND email = %s",(vals['nama'],vals['email']))
         if(vals['boleh_dikontak']):
             #query to mailing_contact_list insert contact_id and list_id
-            self.env.cr.execute("INSERT INTO mailing_contact_list_rel (contact_id,list_id,opt_out) VALUES (%s,%s,%s)",(self.env.cr.fetchone()[0],1,'f'))
+            self.env.cr.execute("INSERT INTO mailing_contact_list_rel (contact_id,list_id,opt_out) VALUES (%s,%s,%s)",(self.env.cr.fetchone()[0],mailing_list_id,'f'))
         else:
-            self.env.cr.execute("INSERT INTO mailing_contact_list_rel (contact_id,list_id,opt_out) VALUES (%s,%s,%s)",(self.env.cr.fetchone()[0],1,'t'))
+            self.env.cr.execute("INSERT INTO mailing_contact_list_rel (contact_id,list_id,opt_out) VALUES (%s,%s,%s)",(self.env.cr.fetchone()[0],mailing_list_id,'t'))
         res = super(Customer, self).create(vals)
         return res 
 
